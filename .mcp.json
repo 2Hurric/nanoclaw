@@ -1,3 +1,8 @@
 {
-  "mcpServers": {}
+  "mcpServers": {
+    "promodontpanic": {
+      "type": "sse",
+      "url": "http://promodontpanic:8000/sse"
+    }
+  }
 }

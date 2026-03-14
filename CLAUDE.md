@@ -59,6 +59,27 @@ systemctl --user restart nanoclaw
 
 **WhatsApp not connecting after upgrade:** WhatsApp is now a separate channel fork, not bundled in core. Run `/add-whatsapp` (or `git remote add whatsapp https://github.com/qwibitai/nanoclaw-whatsapp.git && git fetch whatsapp main && git merge whatsapp/main && npm run build`) to install it. Existing auth credentials and groups are preserved.
 
+## Agent Runner Source (Per-Group Copy)
+
+`container-runner.ts` copies `container/agent-runner/src/` to `data/sessions/{group}/agent-runner-src/` on **first container launch only** (`!fs.existsSync` guard). This per-group copy is mounted into the container at `/app/src`, overriding the image contents.
+
+**When you modify agent-runner source files, the changes will NOT propagate to existing groups.** You must manually sync:
+
+```bash
+# Copy updated source to all existing groups
+for d in data/sessions/*/agent-runner-src; do
+  cp container/agent-runner/src/*.ts "$d/"
+done
+```
+
+Then rebuild the container image and restart NanoClaw.
+
 ## Container Build Cache
 
 The container buildkit caches the build context aggressively. `--no-cache` alone does NOT invalidate COPY steps — the builder's volume retains stale files. To force a truly clean rebuild, prune the builder then re-run `./container/build.sh`.
+
+## MCP Servers in Agent Containers
+
+The Claude Agent SDK's `type: 'sse'` MCP config silently fails at runtime despite being in the type definitions. To connect agent containers to SSE MCP servers, use `sse-bridge.ts` — a stdio-to-SSE proxy that the SDK spawns as a child process. See `container/agent-runner/src/sse-bridge.ts`.
+
+Agent containers must be on the `nanoclaw_default` Docker network (added in `container-runner.ts`) to reach other compose services by hostname (e.g. `http://promodontpanic:8000/sse`).

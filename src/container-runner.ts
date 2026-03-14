@@ -238,6 +238,10 @@ function buildContainerArgs(
     args.push('-e', 'CLAUDE_CODE_OAUTH_TOKEN=placeholder');
   }
 
+  // Join the shared Docker network so containers can reach internal MCP servers
+  // (e.g. promodontpanic at http://promodontpanic:8000/sse)
+  args.push('--network', 'nanoclaw_default');
+
   // Runtime-specific args for host gateway resolution
   args.push(...hostGatewayArgs());
 
